@@ -49,6 +49,8 @@ contract MinimalAccount is IAccount, Ownable {
         }
     }
 
+    receive() external payable {}
+
     function _validateUserOp(PackedUserOperation memory userOp,bytes32 userOpHash) internal view returns(uint256 validationData) {
         bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(ethSignedMessageHash,userOp.signature);
