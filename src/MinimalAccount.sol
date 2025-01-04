@@ -11,6 +11,8 @@ import {IEntryPoint} from "../lib/account-abstraction/contracts/interfaces/IEntr
 
 contract MinimalAccount is IAccount, Ownable {
     error MinimalAccount__NotFromEntryPoint();
+    error MinimalAccount__NotFromEntryPointOrOwner();
+    error MinimalAccount__CallFailed(bytes);
 
     IEntryPoint private i_entryPoint;
 
@@ -20,6 +22,13 @@ contract MinimalAccount is IAccount, Ownable {
         }
         _;
     }
+    modifier requireFromEntryPointOrOwner() {
+        if (msg.sender != address(i_entryPoint) && msg.sender != owner()) {
+            revert MinimalAccount__NotFromEntryPointOrOwner();
+        }
+        _;
+    }
+    
     constructor(address _entryPoint) Ownable(msg.sender){
         i_entryPoint = IEntryPoint(_entryPoint);
     }
@@ -31,6 +40,13 @@ contract MinimalAccount is IAccount, Ownable {
     ) external requireFromEntryPoint returns (uint256 validationData) {
         uint256 validationData = _validateUserOp(userOp,userOpHash);
         _payPrefund(missingAccountFunds);
+    }
+
+    function execute(address destination, uint256 value, bytes calldata functionData) external  {
+        (bool success, bytes memory result) = destination.call{value: value}(functionData);
+        if (!success) {
+            revert MinimalAccount__CallFailed(result);
+        }
     }
 
     function _validateUserOp(PackedUserOperation memory userOp,bytes32 userOpHash) internal view returns(uint256 validationData) {
