@@ -7,16 +7,28 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import {MessageHashUtils} from "../lib/openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
 import {ECDSA} from "../lib/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import {SIG_VALIDATION_FAILED, SIG_VALIDATION_SUCCESS} from "lib/account-abstraction/contracts/core/Helpers.sol";
+import {IEntryPoint} from "../lib/account-abstraction/contracts/interfaces/IEntryPoint.sol";
 
 contract MinimalAccount is IAccount, Ownable {
+    error MinimalAccount__NotFromEntryPoint();
 
-    constructor() Ownable(msg.sender){}
+    IEntryPoint private i_entryPoint;
 
+    modifier requireFromEntryPoint() {
+        if ( msg.sender != address(i_entryPoint) ){
+            revert MinimalAccount__NotFromEntryPoint();
+        }
+        _;
+    }
+    constructor(address _entryPoint) Ownable(msg.sender){
+        i_entryPoint = IEntryPoint(_entryPoint);
+    }
+    
     function validateUserOp(
         PackedUserOperation calldata userOp,
         bytes32 userOpHash,
         uint256 missingAccountFunds
-    ) external returns (uint256 validationData) {
+    ) external requireFromEntryPoint returns (uint256 validationData) {
         uint256 validationData = _validateUserOp(userOp,userOpHash);
         _payPrefund(missingAccountFunds);
     }
