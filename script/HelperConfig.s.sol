@@ -58,7 +58,7 @@ contract HelperConfig is Script {
             return networkConfigs[LOCAL_CHAIN_ID];
         }
 
-        vm.startBroadcast();
+        vm.startBroadcast(anvilAccountAddress);
         EntryPoint entryPoint = new EntryPoint();
         vm.stopBroadcast();
 

@@ -20,7 +20,16 @@ contract SendPackedUserOp is Script {
         bytes32 digest = MessageHashUtils.toEthSignedMessageHash(userOpHash);
 
         ///3. Sign it
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(config.account,digest);
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+        if (block.chainid == 31337) {
+            uint256 anvilPrivateKey = vm.parseUint((vm.envString("ANVIL_DEFAULT_PRIVATE_KEY")));
+            (v, r, s) = vm.sign(anvilPrivateKey,digest);
+        }
+        else {
+            (v, r, s) = vm.sign(config.account,digest);
+        }
         userOp.signature = abi.encodePacked(r,s,v);
         return userOp;
     }
