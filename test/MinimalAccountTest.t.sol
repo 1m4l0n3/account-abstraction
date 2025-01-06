@@ -69,4 +69,18 @@ contract MinimalAccountTest is Test {
 
         assertEq(actualSigner,minimalAccount.owner());
     }
+
+    function testValidateUserOps() external {
+        address destination = address(usdc);
+        uint256 value = 0;
+        uint256 missingFund = 1e18;
+        bytes memory functionData = abi.encodeWithSelector(ERC20Mock.mint.selector,address(minimalAccount),amount);
+        bytes memory executeCallData = abi.encodeWithSelector(MinimalAccount.execute.selector,destination,value,functionData);
+        PackedUserOperation memory userOp = sendPackedUserOp.generateSignedUserOperation(executeCallData,helperConfig.getConfig());
+        bytes32 userOpHash = IEntryPoint(helperConfig.getConfig().entryPoint).getUserOpHash(userOp);
+
+        vm.prank(helperConfig.getConfig().entryPoint);
+        uint256 validation = minimalAccount.validateUserOp(userOp,userOpHash,missingFund);
+        assertEq(validation,0);
+    }
 }
